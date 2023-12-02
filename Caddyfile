@@ -1,0 +1,4 @@
+:5200 {
+  reverse_proxy /api/* :1234
+  reverse_proxy * :5173
+}

@@ -57,8 +57,12 @@
     ]
   },
   "dependencies": {
+    "cookie": "^0.6.0",
     "lib0": "^0.2.52",
     "lodash.debounce": "^4.0.8",
+    "promised-sqlite3": "^2.1.0",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.1",
     "y-protocols": "^1.0.5"
   },
   "devDependencies": {
