@@ -4,8 +4,8 @@ RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 WORKDIR /home/node/app
 COPY package*.json ./
 RUN npm install
-RUN mkdir sqlite
 USER node
 COPY --chown=node:node . .
+RUN mkdir sqlite
 EXPOSE 1234
 CMD [ "npm", "start" ]
