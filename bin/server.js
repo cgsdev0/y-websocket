@@ -306,7 +306,7 @@ const createTables = async () => {
 
 let db;
 (async () => {
-  db = await AsyncDatabase.open("users.sqlite");
+  db = await AsyncDatabase.open("sqlite/users.sqlite");
   await createTables();
   server.listen(port, host, async () => {
     console.log(`running at '${host}' on port ${port}`);
