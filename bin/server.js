@@ -62,7 +62,7 @@ const register = async (request, response) => {
       "Content-Type": "application/json",
       "Set-Cookie": `session=${session}; Path=/; Max-Age=315360000; HttpOnly; ${secure}SameSite=strict`,
     });
-    response.end(JSON.stringify({ ok: "ok" }));
+    response.end(JSON.stringify({ ok: "ok", username: login }));
   } else {
     response.writeHead(500, { "Content-Type": "application/json" });
     response.end(JSON.stringify({ error: "it blew up" }));
@@ -126,13 +126,21 @@ const permissionUpdateEndpoint = async (request, response, allow) => {
 
 const permissionCheckEndpoint = async (request, response) => {
   const docName = makeDocName(request);
-  const get_rekt = () => {
-    response.writeHead(403, { "Content-Type": "application/json" });
-    response.end(JSON.stringify({ error: "you cant do that" }));
+  const get_rekt = (why) => {
+    if (why === "badguest") {
+      response.writeHead(403, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ error: "you dont exist" }));
+    } else if (why === "badhost") {
+      response.writeHead(404, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ error: "host dont exist" }));
+    } else {
+      response.writeHead(401, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ error: "you cant do that" }));
+    }
   };
   const ids = await getGuestAndHostId(request, docName);
-  if (!ids) {
-    get_rekt();
+  if (typeof ids === "string") {
+    get_rekt(ids);
     return;
   }
   const { host_id, guest_id } = ids;
@@ -193,17 +201,17 @@ wss.on("connection", (conn, request) => {
 const getGuestAndHostId = async (request, host_username) => {
   const cookies = cookie.parse(request.headers.cookie || "");
   if (!cookies || !cookies.session) {
-    return;
+    return "badguest";
   }
   const { session } = cookies;
   const user = await findUserFromSession(session);
   if (!user) {
-    return;
+    return "badguest";
   }
 
   const host_id = await findUserIdFromUsername(host_username);
   if (!host_id) {
-    return;
+    return "badhost";
   }
   return { guest_id: user.user_id, host_id };
 };
@@ -218,7 +226,7 @@ server.on("upgrade", (request, socket, head) => {
    */
   const handleAuth = async (ws) => {
     const ids = await getGuestAndHostId(request, docName);
-    if (!ids) {
+    if (typeof ids === "string") {
       ws.close();
       return;
     }
