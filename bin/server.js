@@ -61,7 +61,6 @@ const register = async (request, response) => {
     }),
   });
   const stuff = await resp.json();
-  console.log(stuff);
   const { access_token } = stuff;
   const twitch_resp = await fetch("https://id.twitch.tv/oauth2/validate", {
     headers: { Authorization: `OAuth ${access_token}` },
@@ -235,7 +234,6 @@ const getGuestAndHostId = async (request, host_username) => {
 
 server.on("upgrade", (request, socket, head) => {
   const docName = makeDocName(request);
-  console.log({ docName });
   // You may check auth of request here..
   // See https://github.com/websockets/ws#client-authentication
   /**
