@@ -4,6 +4,7 @@
  * @type {any}
  */
 const WebSocket = require("ws");
+require("dotenv").config();
 const http = require("http");
 const consumers = require("stream/consumers");
 const wss = new WebSocket.Server({ noServer: true });
@@ -43,11 +44,27 @@ const listUsers = async (request, response) => {
 };
 
 const register = async (request, response) => {
-  const { twitch_access_token } = JSON.parse(
+  const { code, redirect_uri } = JSON.parse(
     (await consumers.buffer(request)).toString()
   );
+  const resp = await fetch("https://id.twitch.tv/oauth2/token", {
+    method: "post",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      client_id: process.env.TWITCH_CLIENT_ID,
+      client_secret: process.env.TWITCH_CLIENT_SECRET,
+      code,
+      grant_type: "authorization_code",
+      redirect_uri,
+    }),
+  });
+  const stuff = await resp.json();
+  console.log(stuff);
+  const { access_token } = stuff;
   const twitch_resp = await fetch("https://id.twitch.tv/oauth2/validate", {
-    headers: { Authorization: `OAuth ${twitch_access_token}` },
+    headers: { Authorization: `OAuth ${access_token}` },
   });
   const { login, user_id } = await twitch_resp.json();
   if (!login || !user_id) {

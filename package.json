@@ -58,6 +58,7 @@
   },
   "dependencies": {
     "cookie": "^0.6.0",
+    "dotenv": "^16.3.1",
     "lib0": "^0.2.52",
     "lodash.debounce": "^4.0.8",
     "promised-sqlite3": "^2.1.0",
