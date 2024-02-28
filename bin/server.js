@@ -37,7 +37,7 @@ const listUsers = async (request, response) => {
   const rows = await db.all(
     "SELECT user_id, username, CASE WHEN host IS NULL THEN 0 ELSE 1 END AS allowed FROM users LEFT JOIN permissions ON permissions.guest = user_id AND permissions.host = ? WHERE user_id != ? ORDER BY allowed DESC",
     host_id,
-    host_id
+    host_id,
   );
   response.writeHead(200, { "Content-Type": "application/json" });
   response.end(JSON.stringify({ data: rows }));
@@ -45,7 +45,7 @@ const listUsers = async (request, response) => {
 
 const register = async (request, response) => {
   const { code, redirect_uri } = JSON.parse(
-    (await consumers.buffer(request)).toString()
+    (await consumers.buffer(request)).toString(),
   );
   const resp = await fetch("https://id.twitch.tv/oauth2/token", {
     method: "post",
@@ -91,7 +91,7 @@ const checkPerms = async (host_id, guest_id) => {
     const row = await db.get(
       "SELECT COUNT(*) as c FROM permissions WHERE host = ? AND guest = ?",
       host_id,
-      guest_id
+      guest_id,
     );
     if (row?.c > 0) {
       return true;
@@ -127,13 +127,13 @@ const permissionUpdateEndpoint = async (request, response, allow) => {
     await db.run(
       "INSERT OR REPLACE INTO permissions VALUES (?, ?)",
       host_id,
-      guest_id
+      guest_id,
     );
   } else {
     await db.run(
       "DELETE FROM permissions WHERE host = ? AND guest = ?",
       host_id,
-      guest_id
+      guest_id,
     );
   }
   response.writeHead(200, { "Content-Type": "application/json" });
@@ -167,7 +167,7 @@ const permissionCheckEndpoint = async (request, response) => {
       JSON.stringify({
         ok: "come on in",
         username: await usernameFromId(guest_id),
-      })
+      }),
     );
     return;
   }
@@ -261,9 +261,9 @@ const usernameFromId = async (id) => {
   try {
     const row = await db.get(
       "SELECT username FROM users WHERE user_id = ?",
-      id
+      id,
     );
-    return row?.username || null;
+    return row?.username?.toLowercase() || null;
   } catch (e) {
     console.error("finding username failed", e);
   }
@@ -274,7 +274,7 @@ const findUserIdFromUsername = async (username) => {
   try {
     const row = await db.get(
       "SELECT user_id FROM users WHERE username = ?",
-      username
+      username.toLowerCase(),
     );
     return row?.user_id || null;
   } catch (e) {
@@ -287,7 +287,7 @@ const findUserFromSession = async (session) => {
   try {
     const row = await db.get(
       "SELECT sessions.user_id, users.username FROM sessions LEFT JOIN users ON users.user_id = sessions.user_id WHERE session = ?",
-      session
+      session,
     );
     return row;
   } catch (e) {
@@ -300,7 +300,7 @@ const insertUser = async (user_id, username) => {
     await db.run(
       "INSERT OR REPLACE INTO users VALUES (?, ?)",
       user_id,
-      username
+      username.toLowerCase(),
     );
     const session = uuidv4();
     await db.run("INSERT INTO sessions VALUES (?, ?)", session, user_id);
@@ -314,13 +314,13 @@ const insertUser = async (user_id, username) => {
 const createTables = async () => {
   try {
     await db.run(
-      "CREATE TABLE IF NOT EXISTS users (user_id INTEGER NOT NULL PRIMARY KEY, username TEXT NOT NULL)"
+      "CREATE TABLE IF NOT EXISTS users (user_id INTEGER NOT NULL PRIMARY KEY, username TEXT NOT NULL)",
     );
     await db.run(
-      "CREATE TABLE IF NOT EXISTS sessions (session TEXT NOT NULL PRIMARY KEY, user_id INTEGER)"
+      "CREATE TABLE IF NOT EXISTS sessions (session TEXT NOT NULL PRIMARY KEY, user_id INTEGER)",
     );
     await db.run(
-      "CREATE TABLE IF NOT EXISTS permissions (host INTEGER NOT NULL, guest INTEGER NOT NULL, PRIMARY KEY(host,guest))"
+      "CREATE TABLE IF NOT EXISTS permissions (host INTEGER NOT NULL, guest INTEGER NOT NULL, PRIMARY KEY(host,guest))",
     );
   } catch (e) {
     console.log("table creation error", e);
